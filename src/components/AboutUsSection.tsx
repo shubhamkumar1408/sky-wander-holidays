@@ -18,7 +18,7 @@ import {
 import { BrandLogo } from './BrandLogo';
 import riteshImg from '../assets/images/ritesh_photo.jpg.png';
 import komalImg from '../assets/images/komal_photo_1787665397506.jpg';
-import karanImg from '../assets/images/karan_photo_1787665646878.jpg';
+import karanImg from '../assets/images/karan_photo.jpg';
 
 export const AboutUsSection: React.FC = () => {
   const leadershipTeam = [
