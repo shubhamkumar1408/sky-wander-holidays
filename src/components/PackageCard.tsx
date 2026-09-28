@@ -198,20 +198,6 @@ export const PackageCard: React.FC<PackageCardProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            {onPayQR && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPayQR(pkg);
-                }}
-                className="px-2.5 py-2.5 rounded-xl bg-gradient-to-r from-[#5f259f] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#5f259f] text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
-                title="Pay Advance Token via PhonePe UPI QR"
-              >
-                <QrCode className="w-3.5 h-3.5 text-amber-300" />
-                <span>QR Pay</span>
-              </button>
-            )}
             {onDownloadBrochure && (
               <button
                 type="button"

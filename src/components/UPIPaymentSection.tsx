@@ -21,6 +21,7 @@ import { TourPackage } from '../types';
 import { dispatchCustomerActivity } from '../utils/googleWorkspace';
 import { saveLocalBooking, BookingItem } from '../data/sampleBookings';
 import { getCurrentUser } from '../utils/userAuth';
+import logoImg from '../assets/images/logo.image.jpg';
 
 interface UPIPaymentSectionProps {
   pkg: TourPackage;
@@ -427,108 +428,127 @@ export const UPIPaymentSection: React.FC<UPIPaymentSectionProps> = ({
         )}
       </div>
 
-      {/* 2. AUTHENTIC PHONEPE STANDEE QR CODE DISPLAY */}
+      {/* 2. AUTHENTIC SKY WANDER / KOTAK MAHINDRA BANK UPI QR STANDEE (MATCHING UPLOADED DESIGN) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Left: Authentic Standee Card */}
         <div className="lg:col-span-6 flex flex-col items-center">
           
-          <div className="w-full max-w-[340px] bg-white rounded-3xl shadow-xl border-4 border-[#5f259f] overflow-hidden">
+          <div className="w-full max-w-[360px] bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden p-5 flex flex-col">
             
-            {/* PhonePe Purple Brand Header */}
-            <div className="bg-[#5f259f] p-4 text-white text-center relative shadow-inner">
-              <div className="flex items-center justify-center gap-2">
-                {/* PhonePe White Icon */}
-                <div className="w-7 h-7 rounded-full bg-white text-[#5f259f] font-black text-sm flex items-center justify-center shadow-md">
-                  पे
-                </div>
-                <span className="text-xl font-black tracking-tight">PhonePe</span>
-              </div>
-              <p className="text-[11px] text-purple-200 uppercase tracking-widest font-bold mt-1">
-                Accepted Here
-              </p>
-            </div>
-
-            {/* Accepted UPI Apps Banner */}
-            <div className="bg-slate-100 px-3 py-2 border-b border-slate-200 flex items-center justify-around text-[10px] font-black text-slate-700">
-              <span className="text-indigo-900 font-extrabold">BHIM</span>
-              <span className="text-emerald-700 font-extrabold">UPI</span>
-              <span className="text-blue-600 font-extrabold">GPay</span>
-              <span className="text-sky-600 font-extrabold">Paytm</span>
-              <span className="text-[#5f259f] font-extrabold">PhonePe</span>
-            </div>
-
-            {/* QR Code Container */}
-            <div className="p-5 text-center bg-white flex flex-col items-center">
-              
-              <div className="relative p-2.5 bg-white rounded-2xl border-2 border-dashed border-[#5f259f]/40 shadow-sm">
-                {qrCodeDataUrl ? (
-                  <img
-                    src={qrCodeDataUrl}
-                    alt="PhonePe UPI QR Code"
-                    className="w-56 h-56 sm:w-60 sm:h-60 object-contain mx-auto"
-                  />
-                ) : (
-                  <div className="w-56 h-56 flex items-center justify-center bg-slate-100 rounded-xl text-slate-400 text-xs">
-                    Generating UPI QR Code...
-                  </div>
-                )}
-
-                {/* Centered PhonePe Logo inside QR code */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-md border-2 border-[#5f259f] flex items-center justify-center text-[#5f259f] font-black text-sm">
-                  पे
+            {/* Top Bar: Brand Logo, Merchant Name & UPI ID */}
+            <div className="flex items-center gap-3">
+              {/* SW Brand Logo Badge */}
+              <div className="relative shrink-0 w-14 h-12 bg-white rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-center p-1">
+                <img
+                  src={logoImg}
+                  alt="Sky Wander Holidays"
+                  className="w-full h-full object-contain"
+                />
+                {/* Small camera badge at bottom-right */}
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-slate-600 rounded-full flex items-center justify-center text-[8px] text-white">
+                  📷
                 </div>
               </div>
 
-              {/* Amount Tag */}
-              <div className="mt-3 py-1 px-4 rounded-full bg-purple-50 text-[#5f259f] border border-purple-200 text-xs font-black inline-flex items-center gap-1.5 shadow-sm">
-                <span>Amount to Pay:</span>
-                <span className="text-sm font-extrabold">₹{activeAmount.toLocaleString('en-IN')}</span>
-              </div>
+              {/* Merchant Name & Verified Badge & UPI ID */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate">
+                    Ritesh Kumar
+                  </h3>
+                  {/* Verified Blue Check Badge */}
+                  <svg className="w-4 h-4 text-[#0077B6] shrink-0 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                </div>
 
-              {/* Merchant Details */}
-              <div className="mt-3 text-center">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Official Merchant
-                </span>
-                <h4 className="text-sm font-black text-slate-900 tracking-wide">
-                  {MERCHANT_NAME}
-                </h4>
-                <div className="mt-1 flex items-center justify-center gap-1.5">
-                  <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                    {PRIMARY_UPI_ID}
+                {/* UPI ID with copy button */}
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-xs sm:text-[13px] font-bold text-slate-700 font-mono">
+                    UPI ID: 8676928509@pthdfc
                   </span>
                   <button
                     type="button"
                     onClick={copyUpiId}
-                    className="p-1 rounded bg-purple-100 hover:bg-purple-200 text-[#5f259f] transition-colors cursor-pointer"
+                    className="p-1 rounded hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
                     title="Copy UPI ID"
                   >
                     {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
                 </div>
                 {isCopied && (
-                  <span className="text-[10px] text-emerald-600 font-bold block mt-1">
-                    ✓ UPI ID Copied to clipboard!
+                  <span className="text-[10px] text-emerald-600 font-bold block">
+                    ✓ UPI ID Copied!
                   </span>
                 )}
               </div>
+            </div>
 
-              {/* Scan & Pay footer */}
-              <div className="mt-4 pt-3 border-t border-slate-100 w-full text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Scan & Pay Using Any UPI App
+            {/* Inner Standee Frame: Sky Blue Border & QR Code */}
+            <div className="mt-4 w-full rounded-[28px] border-[7px] border-[#00A3E0] overflow-hidden bg-white shadow-inner flex flex-col items-center">
+              
+              {/* QR Code Container */}
+              <div className="relative p-4 sm:p-5 flex items-center justify-center bg-white w-full">
+                {qrCodeDataUrl ? (
+                  <img
+                    src={qrCodeDataUrl}
+                    alt="Ritesh Kumar UPI QR Code"
+                    className="w-56 h-56 sm:w-60 sm:h-60 object-contain mx-auto"
+                  />
+                ) : (
+                  <div className="w-56 h-56 flex items-center justify-center bg-slate-100 rounded-xl text-slate-400 text-xs">
+                    Generating Official UPI QR Code...
+                  </div>
+                )}
+
+                {/* Center Brand Emblem inside QR Code */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-xl bg-white shadow-md border-2 border-[#00A3E0] flex items-center justify-center p-1">
+                  <img src={logoImg} alt="SW" className="w-full h-full object-contain" />
+                </div>
+              </div>
+
+              {/* Bottom Solid Navy Blue Banner inside border (matching uploaded image) */}
+              <div className="w-full bg-[#004B87] h-10 flex items-center justify-center px-4">
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-sky-100">
+                  Sky Wander Holidays • Verified Payee
+                </span>
               </div>
             </div>
 
-            {/* Bottom App Direct Trigger */}
-            <div className="p-3 bg-purple-50 border-t border-purple-100 text-center">
+            {/* Bottom Bank Details Strip (Kotak Mahindra Bank - 9961 & Change Bank) */}
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs px-1">
+              <div className="flex items-center gap-2">
+                {/* Kotak Infinity Knot Icon */}
+                <div className="w-6 h-6 rounded-full bg-[#ED1C24] text-white flex items-center justify-center font-black text-[10px] shadow-2xs">
+                  <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" fill="#ED1C24"/>
+                    <path d="M7 12c0-1.65 1.35-3 3-3 1.2 0 2.25.7 2.7 1.7.45-1 1.5-1.7 2.7-1.7 1.65 0 3 1.35 3 3s-1.35 3-3 3c-1.2 0-2.25-.7-2.7-1.7-.45 1-1.5-1.7-2.7 1.7-1.65 0-3-1.35-3-3z" fill="white"/>
+                  </svg>
+                </div>
+                <span className="font-bold text-slate-800 text-xs sm:text-[13px]">
+                  Kotak Mahindra Bank - 9961
+                </span>
+              </div>
+
+              <span className="text-[#0077B6] font-bold text-xs cursor-pointer hover:underline">
+                Verified Bank
+              </span>
+            </div>
+
+            {/* Amount & Direct UPI App Button */}
+            <div className="mt-4 p-3 bg-sky-50/80 rounded-2xl border border-sky-200/60 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-500 block">Token Amount</span>
+                <span className="text-base font-black text-slate-900">₹{activeAmount.toLocaleString('en-IN')}</span>
+              </div>
               <button
                 type="button"
                 onClick={handleMobileUpiIntent}
-                className="w-full py-2.5 px-3 rounded-xl bg-[#5f259f] hover:bg-[#4d1d82] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-[#0077B6] hover:bg-[#005F92] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
               >
                 <Smartphone className="w-3.5 h-3.5" />
-                <span>Open in UPI App (Mobile)</span>
+                <span>Pay via UPI App</span>
               </button>
             </div>
 

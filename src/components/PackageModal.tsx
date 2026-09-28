@@ -303,13 +303,13 @@ export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose, initia
               onClick={() => setActiveTab('payment')}
               className={`py-3.5 px-3 border-b-2 transition-all whitespace-nowrap cursor-pointer uppercase tracking-wider text-xs flex items-center gap-1.5 rounded-t-lg ${
                 activeTab === 'payment'
-                  ? 'border-[#5f259f] text-[#5f259f] font-black bg-purple-100/60'
-                  : 'border-transparent text-purple-700 hover:text-purple-950 bg-purple-50/80 hover:bg-purple-100/50'
+                  ? 'border-[#0077B6] text-[#0077B6] font-black bg-sky-100/70'
+                  : 'border-transparent text-sky-700 hover:text-sky-950 bg-sky-50/80 hover:bg-sky-100/50'
               }`}
             >
-              <QrCode className="w-3.5 h-3.5 text-[#5f259f]" />
-              <span>💳 Direct UPI QR Pay</span>
-              <span className="text-[9px] bg-[#5f259f] text-white px-1.5 py-0.2 rounded-full font-black">Fast</span>
+              <QrCode className="w-3.5 h-3.5 text-[#0077B6]" />
+              <span>💳 Official UPI QR Pay</span>
+              <span className="text-[9px] bg-[#0077B6] text-white px-1.5 py-0.2 rounded-full font-black">Direct</span>
             </button>
           </div>
 
@@ -339,20 +339,20 @@ export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose, initia
           {/* Left Column: Details / Tabs */}
           <div className={`${activeTab === 'payment' ? 'lg:col-span-12' : 'lg:col-span-7'} space-y-6`}>
             
-            {/* Quick Instant PhonePe QR Payment Ribbon */}
+            {/* Quick Instant Official UPI QR Payment Ribbon */}
             {activeTab !== 'payment' && (
-              <div className="p-3.5 bg-gradient-to-r from-purple-950 via-slate-900 to-[#0B2530] text-white rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-purple-500/30 shadow-md">
+              <div className="p-3.5 bg-gradient-to-r from-[#003B73] via-[#07161C] to-[#0E3544] text-white rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-[#00A3E0]/40 shadow-md">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-white text-[#5f259f] font-black text-base flex items-center justify-center shrink-0 shadow">
-                    पे
+                  <div className="w-9 h-9 rounded-full bg-white text-[#0077B6] font-black text-sm flex items-center justify-center shrink-0 shadow">
+                    ₹
                   </div>
                   <div>
                     <div className="text-xs font-black tracking-wide flex items-center gap-1.5 text-white">
-                      <span>Instant Booking via PhonePe / Any UPI QR</span>
-                      <span className="px-1.5 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] font-black uppercase">Direct</span>
+                      <span>Instant Booking via Verified UPI QR (Ritesh Kumar)</span>
+                      <span className="px-1.5 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] font-black uppercase">Verified</span>
                     </div>
-                    <p className="text-[11px] text-purple-200">
-                      Scan PhonePe Standee QR code & lock your dates with advance token.
+                    <p className="text-[11px] text-sky-200">
+                      Kotak Mahindra Bank • 8676928509@pthdfc • Instant confirmed booking receipt.
                     </p>
                   </div>
                 </div>
@@ -855,14 +855,14 @@ export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose, initia
                     </div>
                   </div>
 
-                  {/* DIRECT PHONEPE UPI QR BUTTON */}
+                  {/* DIRECT OFFICIAL UPI QR BUTTON */}
                   <button
                     type="button"
                     onClick={() => setActiveTab('payment')}
-                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#5f259f] via-[#7c3aed] to-[#FF7A00] hover:opacity-95 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-purple-900/30 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer ring-2 ring-purple-300"
+                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#0077B6] via-[#0096C7] to-[#FF7A00] hover:opacity-95 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-sky-900/30 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer ring-2 ring-sky-300"
                   >
                     <QrCode className="w-4 h-4 text-amber-300" />
-                    <span>⚡ Pay Direct via UPI QR (PhonePe)</span>
+                    <span>⚡ Pay Advance Token via UPI QR</span>
                   </button>
 
                   <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider text-center my-1">

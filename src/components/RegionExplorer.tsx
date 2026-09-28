@@ -548,13 +548,9 @@ const DestinationCard: React.FC<DestinationCardProps> = ({ dest, onSelect, onPay
           {dest.tag}
         </span>
 
-        {/* UPI QR Pay Badge Top-Right */}
+        {/* State Badge Top-Right */}
         <div className="absolute top-3 right-3 flex items-center gap-1.5">
-          <span className="px-2 py-0.5 rounded-md bg-purple-900/90 backdrop-blur-sm text-purple-200 text-[9px] font-black uppercase tracking-wider flex items-center gap-1 border border-purple-400/40 shadow-sm">
-            <QrCode className="w-2.5 h-2.5 text-amber-300" />
-            UPI QR Pay
-          </span>
-          <span className="px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-slate-800 text-[10px] font-black uppercase tracking-wider shadow-sm">
+          <span className="px-2.5 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-slate-800 text-[10px] font-black uppercase tracking-wider shadow-sm">
             {dest.state}
           </span>
         </div>
@@ -611,25 +607,13 @@ const DestinationCard: React.FC<DestinationCardProps> = ({ dest, onSelect, onPay
           </div>
 
           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-            {onPayQR && (
-              <button
-                type="button"
-                onClick={onPayQR}
-                className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#5f259f] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#5f259f] text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm active:scale-95 transition-all cursor-pointer"
-                title="Pay directly via PhonePe UPI QR"
-              >
-                <QrCode className="w-3 h-3 text-amber-300" />
-                <span>QR Pay</span>
-              </button>
-            )}
-
             <button
               type="button"
               onClick={onSelect}
-              className="px-3 py-1.5 rounded-lg bg-[#1698B4] hover:bg-[#0E7A91] text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm active:scale-95 transition-all cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-[#1698B4] hover:bg-[#0E7A91] text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm active:scale-95 transition-all cursor-pointer"
               title="Open Destination Page & Full Itinerary"
             >
-              <span>View Page</span>
+              <span>View Tour</span>
               <ArrowRight className="w-3 h-3" />
             </button>
           </div>
