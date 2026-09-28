@@ -634,7 +634,6 @@ export const TRAVELER_REVIEWS = [
     rating: 5,
     date: '12 Aug 2026',
     comment: 'Sky Wander Holidays made our Spiti road trip flawless! Chandratal Lake camping and Key Monastery views were magical. Chauffeur was exceptionally skilled on high altitude mountain passes. Unbeatable price for ₹20,000!',
-    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     verified: true
   },
   {
@@ -645,7 +644,6 @@ export const TRAVELER_REVIEWS = [
     rating: 5,
     date: '05 Aug 2026',
     comment: 'Took my senior citizen parents for Char Dham Yatra. Hotel stays and VIP darshan coordination at Kedarnath and Badrinath were super comfortable. 24x7 support on WhatsApp was comforting!',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
     verified: true
   },
   {
@@ -656,7 +654,6 @@ export const TRAVELER_REVIEWS = [
     rating: 5,
     date: '28 Jul 2026',
     comment: 'Our weekend college trip to Kasol & Solang valley was wonderful! Parvati river cafe stays and bonfire nights arranged by Sky Wander Holidays at just ₹7,000 per head was a steal deal.',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
     verified: true
   },
   {
@@ -667,7 +664,6 @@ export const TRAVELER_REVIEWS = [
     rating: 5,
     date: '18 Jul 2026',
     comment: 'Our international Bali holiday went seamless! The private pool villa in Seminyak and Nusa Penida speedboat tour was world-class. Sky Wander Holidays handled everything with perfection.',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
     verified: true
   }
 ];

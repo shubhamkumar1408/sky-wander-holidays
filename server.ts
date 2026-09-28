@@ -5,14 +5,44 @@ import { GoogleGenAI } from '@google/genai';
 import { DOMESTIC_PACKAGES } from './src/data/packages';
 import { DOMESTIC_DESTINATIONS, DOMESTIC_REGIONS, TRAVELER_REVIEWS, LIVE_BOOKING_SAMPLE } from './src/data/destinations';
 import { BookingInquiry } from './src/types';
+import { INITIAL_SAMPLE_BOOKINGS, BookingItem } from './src/data/sampleBookings';
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
 
-// In-memory store for inquiries
-const inquiriesStore: BookingInquiry[] = [];
+// In-memory store for inquiries and bookings
+const bookingsStore: BookingItem[] = [...INITIAL_SAMPLE_BOOKINGS];
+const inquiriesStore: BookingInquiry[] = [...INITIAL_SAMPLE_BOOKINGS];
+
+// In-memory store for brochure PDF download leads
+interface ItineraryDownloadLead {
+  id: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  packageId: string;
+  packageTitle: string;
+  destination: string;
+  travelMonth?: string;
+  travelersCount?: string;
+  downloadedAt: string;
+}
+const downloadLeadsStore: ItineraryDownloadLead[] = [];
+
+// In-memory central activity logs for all logins and form submissions
+export interface ActivityRecord {
+  id: string;
+  type: 'LOGIN' | 'INQUIRY' | 'BOOKING' | 'BROCHURE_DOWNLOAD';
+  name: string;
+  phone: string;
+  email?: string;
+  code?: string;
+  details?: Record<string, any>;
+  timestamp: string;
+}
+const activityLogsStore: ActivityRecord[] = [];
 
 // Lazy Gemini AI initialization helper
 function getGeminiClient(): GoogleGenAI | null {
@@ -152,10 +182,44 @@ app.post('/api/inquiries', (req, res) => {
 
     inquiriesStore.unshift(newInquiry);
 
+    activityLogsStore.unshift({
+      id: `ACT-${Date.now()}`,
+      type: 'INQUIRY',
+      name: fullName,
+      phone,
+      email: email || '',
+      timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      details: {
+        id: inquiryId,
+        packageTitle,
+        travelDate,
+        adultsCount,
+        departureCity,
+        estimatedTotal,
+        specialRequests
+      }
+    });
+
+    const newBooking: BookingItem = {
+      ...newInquiry,
+      destination: packageTitle || 'Domestic Holiday Tour',
+      duration: '5 Days / 4 Nights',
+      cabType: includeCab ? 'Private Dedicated AC Tourist Cab' : 'Transfers On Request',
+      advancePaid: Math.round(Number(estimatedTotal) * 0.4) || 8000,
+      paymentStatus: 'Advance Received (100% Protected)',
+      tripStatus: 'Confirmed',
+      assignedManager: 'Mr. Shubham Dutt (Tour Desk Head)',
+      managerPhone: '+91 86769 28509',
+      driverName: 'Verified Tourist Chauffeur',
+      driverPhone: '+91 86769 28509'
+    };
+    bookingsStore.unshift(newBooking);
+
     res.json({
       success: true,
       message: 'Your Sky Wander Holidays domestic trip booking inquiry has been confirmed!',
-      inquiry: newInquiry
+      inquiry: newInquiry,
+      booking: newBooking
     });
   } catch (error) {
     console.error('Error creating inquiry:', error);
@@ -169,6 +233,172 @@ app.get('/api/inquiries', (req, res) => {
     success: true,
     count: inquiriesStore.length,
     inquiries: inquiriesStore
+  });
+});
+
+// 5a. Get bookings by phone number or id
+app.get('/api/bookings', (req, res) => {
+  const { phone, query } = req.query;
+  let results = [...bookingsStore];
+
+  const searchTarget = String(phone || query || '').trim();
+  if (searchTarget) {
+    const cleanDigits = searchTarget.replace(/\D/g, '').slice(-10);
+    results = results.filter(b => {
+      const bPhone = b.phone.replace(/\D/g, '').slice(-10);
+      return (cleanDigits && bPhone.includes(cleanDigits)) ||
+             b.id.toLowerCase().includes(searchTarget.toLowerCase()) ||
+             b.fullName.toLowerCase().includes(searchTarget.toLowerCase());
+    });
+  }
+
+  res.json({
+    success: true,
+    count: results.length,
+    bookings: results
+  });
+});
+
+app.get('/api/bookings/:identifier', (req, res) => {
+  const { identifier } = req.params;
+  const cleanDigits = identifier.replace(/\D/g, '').slice(-10);
+
+  const matched = bookingsStore.filter(b => {
+    const bPhone = b.phone.replace(/\D/g, '').slice(-10);
+    return (cleanDigits && bPhone === cleanDigits) ||
+           b.id.toLowerCase() === identifier.toLowerCase();
+  });
+
+  res.json({
+    success: true,
+    count: matched.length,
+    bookings: matched
+  });
+});
+
+// 5b. Record itinerary PDF download lead and notify Skywander6@gmail.com
+app.post('/api/itinerary-download-lead', (req, res) => {
+  try {
+    const {
+      fullName,
+      phone,
+      email,
+      packageId,
+      packageTitle,
+      destination,
+      travelMonth = 'Upcoming',
+      travelersCount = '2 Travelers',
+      downloadedAt = new Date().toISOString()
+    } = req.body;
+
+    if (!fullName || !phone || !email) {
+      return res.status(400).json({ success: false, error: 'Full name, phone, and email are required.' });
+    }
+
+    const leadId = `LEAD-PDF-${Math.floor(100000 + Math.random() * 900000)}`;
+    const newLead: ItineraryDownloadLead = {
+      id: leadId,
+      fullName,
+      phone,
+      email,
+      packageId,
+      packageTitle,
+      destination,
+      travelMonth,
+      travelersCount,
+      downloadedAt
+    };
+
+    downloadLeadsStore.unshift(newLead);
+
+    activityLogsStore.unshift({
+      id: `ACT-${Date.now()}`,
+      type: 'BROCHURE_DOWNLOAD',
+      name: fullName,
+      phone,
+      email,
+      timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      details: {
+        id: leadId,
+        packageTitle,
+        destination,
+        travelMonth,
+        travelersCount
+      }
+    });
+
+    // Simulated / log email notification trigger to travel desk
+    console.log(`[DISPATCH LEAD EMAIL TO: Skywander6@gmail.com]
+=========================================
+NEW ITINERARY PDF DOWNLOAD LEAD!
+Lead ID: ${newLead.id}
+Customer Name: ${fullName}
+Phone / WhatsApp: ${phone}
+Email: ${email}
+Destination: ${packageTitle} (${destination})
+Travel Month: ${travelMonth}
+Travelers Count: ${travelersCount}
+Download Timestamp: ${downloadedAt}
+=========================================`);
+
+    res.json({
+      success: true,
+      message: 'Itinerary PDF download lead received and notification dispatched to Skywander6@gmail.com',
+      leadId: newLead.id
+    });
+  } catch (err) {
+    console.error('Error recording download lead:', err);
+    res.status(500).json({ success: false, error: 'Failed to record lead.' });
+  }
+});
+
+app.get('/api/itinerary-download-lead', (req, res) => {
+  res.json({
+    success: true,
+    count: downloadLeadsStore.length,
+    leads: downloadLeadsStore
+  });
+});
+
+// 5c. Central Customer Activity Journal (Logins, Inquiries, Bookings, Downloads)
+app.post('/api/activity-log', (req, res) => {
+  try {
+    const { type, name, phone, email, code, details, timestamp } = req.body;
+    if (!name || !phone) {
+      return res.status(400).json({ success: false, error: 'Name and phone are required.' });
+    }
+
+    const record: ActivityRecord = {
+      id: `ACT-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+      type: type || 'LOGIN',
+      name,
+      phone,
+      email: email || '',
+      code: code || '',
+      details: details || {},
+      timestamp: timestamp || new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+    };
+
+    activityLogsStore.unshift(record);
+
+    console.log(`[ACTIVITY DISPATCH] ${record.type} from ${record.name} (+91 ${record.phone}) -> TARGET: Google Sheets & Email (duttshubham68@gmail.com)`);
+
+    res.json({
+      success: true,
+      message: 'Customer activity recorded successfully',
+      record
+    });
+  } catch (err) {
+    console.error('Error logging activity:', err);
+    res.status(500).json({ success: false, error: 'Failed to record activity.' });
+  }
+});
+
+app.get('/api/activity-log', (req, res) => {
+  res.json({
+    success: true,
+    count: activityLogsStore.length,
+    activities: activityLogsStore
   });
 });
 

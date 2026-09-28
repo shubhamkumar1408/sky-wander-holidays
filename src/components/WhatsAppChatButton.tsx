@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MessageCircle, X, Send, Sparkles, MapPin, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { BrandLogo } from './BrandLogo';
 
 export const WhatsAppChatButton: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,8 +32,8 @@ export const WhatsAppChatButton: React.FC = () => {
             <div className="bg-emerald-600 p-4 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-white tracking-wider">
-                    SW
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center p-1 shadow-sm overflow-hidden">
+                    <BrandLogo variant="icon-only" size="sm" />
                   </div>
                   <span className="w-3 h-3 bg-emerald-300 border-2 border-emerald-600 rounded-full absolute bottom-0 right-0"></span>
                 </div>

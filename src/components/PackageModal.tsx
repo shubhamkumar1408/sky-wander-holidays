@@ -21,14 +21,21 @@ import {
   ChevronUp,
   UserCheck,
   CheckCircle2,
-  Phone
+  Phone,
+  CreditCard,
+  QrCode
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { TourPackage, BookingInquiry } from '../types';
+import { getBrochureForPackage } from '../data/destinationBrochures';
+import { BrochureDownloadModal } from './BrochureDownloadModal';
+import { dispatchCustomerActivity } from '../utils/googleWorkspace';
+import { UPIPaymentSection } from './UPIPaymentSection';
 
 interface PackageModalProps {
   pkg: TourPackage | null;
   onClose: () => void;
+  initialTab?: 'itinerary' | 'inclusions' | 'hotels' | 'reviews' | 'payment';
 }
 
 const DEPARTURE_CITIES = [
@@ -42,12 +49,22 @@ const DEPARTURE_CITIES = [
   { city: 'Self Arrival (No Flights)', flightSurcharge: 0 }
 ];
 
-export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose }) => {
+export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose, initialTab = 'itinerary' }) => {
   if (!pkg) return null;
 
-  const [activeTab, setActiveTab] = useState<'itinerary' | 'inclusions' | 'hotels' | 'reviews'>('itinerary');
+  const [activeTab, setActiveTab] = useState<'itinerary' | 'inclusions' | 'hotels' | 'reviews' | 'payment'>(initialTab);
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, pkg.id]);
   const [selectedGalleryIdx, setSelectedGalleryIdx] = useState(0);
   const [expandedDay, setExpandedDay] = useState<number | null>(1);
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+
+  // Match the specific destination brochure for PDF generation
+  const currentBrochure = getBrochureForPackage(pkg.id || pkg.title);
 
   // Booking & Price Calculator State
   const [adults, setAdults] = useState<number>(2);
@@ -127,6 +144,24 @@ export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose }) => {
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.inquiry) {
+          // Dispatch to Google Sheets and Email
+          dispatchCustomerActivity({
+            type: 'BOOKING',
+            name: userName.trim(),
+            phone: userPhone.trim(),
+            email: userEmail.trim(),
+            details: {
+              id: data.inquiry.id,
+              packageTitle: pkg.title,
+              travelDate,
+              adultsCount: adults,
+              childrenCount: children,
+              departureCity: selectedCity,
+              estimatedTotal: totalEstimatedPrice,
+              specialRequests: specialNotes
+            }
+          }).catch(err => console.warn('Activity dispatch error:', err));
+
           setConfirmedBooking(data.inquiry);
           triggerConfetti();
           return;
@@ -264,12 +299,33 @@ export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose }) => {
             >
               🏨 Hotels & Cab Specs
             </button>
+            <button
+              onClick={() => setActiveTab('payment')}
+              className={`py-3.5 px-3 border-b-2 transition-all whitespace-nowrap cursor-pointer uppercase tracking-wider text-xs flex items-center gap-1.5 rounded-t-lg ${
+                activeTab === 'payment'
+                  ? 'border-[#5f259f] text-[#5f259f] font-black bg-purple-100/60'
+                  : 'border-transparent text-purple-700 hover:text-purple-950 bg-purple-50/80 hover:bg-purple-100/50'
+              }`}
+            >
+              <QrCode className="w-3.5 h-3.5 text-[#5f259f]" />
+              <span>💳 Direct UPI QR Pay</span>
+              <span className="text-[9px] bg-[#5f259f] text-white px-1.5 py-0.2 rounded-full font-black">Fast</span>
+            </button>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsDownloadModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#FF7A00] to-[#E56E00] hover:from-[#E56E00] hover:to-[#CC6200] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer active:scale-95"
+              title="Download Itinerary PDF"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download PDF</span>
+            </button>
+
             <button
               onClick={handleWhatsAppInquiry}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
             >
               <MessageCircle className="w-3.5 h-3.5" />
               <span>WhatsApp Concierge</span>
@@ -281,8 +337,36 @@ export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose }) => {
         <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* Left Column: Details / Tabs */}
-          <div className="lg:col-span-7 space-y-6">
+          <div className={`${activeTab === 'payment' ? 'lg:col-span-12' : 'lg:col-span-7'} space-y-6`}>
             
+            {/* Quick Instant PhonePe QR Payment Ribbon */}
+            {activeTab !== 'payment' && (
+              <div className="p-3.5 bg-gradient-to-r from-purple-950 via-slate-900 to-[#0B2530] text-white rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-purple-500/30 shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-white text-[#5f259f] font-black text-base flex items-center justify-center shrink-0 shadow">
+                    पे
+                  </div>
+                  <div>
+                    <div className="text-xs font-black tracking-wide flex items-center gap-1.5 text-white">
+                      <span>Instant Booking via PhonePe / Any UPI QR</span>
+                      <span className="px-1.5 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] font-black uppercase">Direct</span>
+                    </div>
+                    <p className="text-[11px] text-purple-200">
+                      Scan PhonePe Standee QR code & lock your dates with advance token.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('payment')}
+                  className="shrink-0 px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF7A00] to-amber-500 hover:from-amber-500 hover:to-[#FF7A00] text-white font-black text-xs uppercase tracking-wider shadow-sm cursor-pointer active:scale-95 transition-all flex items-center gap-1.5"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Open UPI QR Code →</span>
+                </button>
+              </div>
+            )}
+
             {/* Overview & Key Highlights */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">
@@ -309,7 +393,34 @@ export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose }) => {
             {/* TAB 1: Day-by-Day Itinerary */}
             {activeTab === 'itinerary' && (
               <div className="space-y-3">
-                <h4 className="text-sm font-black text-slate-900 flex items-center justify-between">
+                {/* Download PDF Lead-Gen Callout Banner */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-[#0B2530] via-[#0E3544] to-[#1698B4] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm border border-[#1698B4]/30">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded bg-[#FF7A00] text-white text-[9px] font-black uppercase tracking-wider">
+                        Official Dossier
+                      </span>
+                      <span className="text-[11px] text-[#38BDF8] font-bold">
+                        {pkg.durationNights}N / {pkg.durationDays}D Plan
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-bold text-white">
+                      Download Complete Itinerary & Rates (PDF)
+                    </h4>
+                    <p className="text-[11px] text-slate-200">
+                      Day-wise stops, meal schedule, inclusions, exclusions & booking terms.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsDownloadModalOpen(true)}
+                    className="shrink-0 px-4 py-2 rounded-xl bg-[#FF7A00] hover:bg-[#E56E00] text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-orange-500/20 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Download PDF</span>
+                  </button>
+                </div>
+
+                <h4 className="text-sm font-black text-slate-900 flex items-center justify-between pt-1">
                   <span>Detailed Day-Wise Itinerary</span>
                   <span className="text-xs font-semibold text-slate-500">
                     Pickup: {pkg.pickupDropCity}
@@ -441,11 +552,41 @@ export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose }) => {
               </div>
             )}
 
+            {/* TAB 4: Direct PhonePe UPI QR Code Payment */}
+            {activeTab === 'payment' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('itinerary')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    <span>← Back to Day-by-Day Itinerary</span>
+                  </button>
+                  <span className="text-xs text-purple-700 font-bold">
+                    Official PhonePe Merchant • Sky Wander Holidays
+                  </span>
+                </div>
+
+                <UPIPaymentSection
+                  pkg={pkg}
+                  adultsCount={adults}
+                  childrenCount={children}
+                  totalEstimatedPrice={totalEstimatedPrice}
+                  travelDate={travelDate}
+                  customerName={userName}
+                  customerPhone={userPhone}
+                  customerEmail={userEmail}
+                />
+              </div>
+            )}
+
           </div>
 
           {/* Right Column: Live Interactive Price Calculator & Booking */}
-          <div className="lg:col-span-5">
-            <div className="bg-gradient-to-b from-[#EBF7FA]/70 via-white to-slate-50 p-5 rounded-3xl border-2 border-[#1698B4]/30 shadow-lg sticky top-6">
+          {activeTab !== 'payment' && (
+            <div className="lg:col-span-5">
+              <div className="bg-gradient-to-b from-[#EBF7FA]/70 via-white to-slate-50 p-5 rounded-3xl border-2 border-[#1698B4]/30 shadow-lg sticky top-6">
               
               {confirmedBooking ? (
                 /* Booking Confirmation Screen */
@@ -714,6 +855,22 @@ export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose }) => {
                     </div>
                   </div>
 
+                  {/* DIRECT PHONEPE UPI QR BUTTON */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('payment')}
+                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#5f259f] via-[#7c3aed] to-[#FF7A00] hover:opacity-95 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-purple-900/30 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer ring-2 ring-purple-300"
+                  >
+                    <QrCode className="w-4 h-4 text-amber-300" />
+                    <span>⚡ Pay Direct via UPI QR (PhonePe)</span>
+                  </button>
+
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider text-center my-1">
+                    <div className="h-[1px] bg-slate-200 flex-1"></div>
+                    <span>or request instant voucher call</span>
+                    <div className="h-[1px] bg-slate-200 flex-1"></div>
+                  </div>
+
                   {/* Submit Action */}
                   <button
                     type="submit"
@@ -742,9 +899,17 @@ export const PackageModal: React.FC<PackageModalProps> = ({ pkg, onClose }) => {
               )}
             </div>
           </div>
+          )}
 
         </div>
       </div>
+
+      {/* Brochure PDF Lead Generation Modal */}
+      <BrochureDownloadModal
+        brochure={currentBrochure}
+        isOpen={isDownloadModalOpen}
+        onClose={() => setIsDownloadModalOpen(false)}
+      />
     </div>
   );
 };

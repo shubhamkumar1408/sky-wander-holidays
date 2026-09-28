@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   Car,
   Hotel,
-  PhoneCall
+  PhoneCall,
+  QrCode
 } from 'lucide-react';
 import { 
   DOMESTIC_DESTINATIONS, 
@@ -30,7 +31,7 @@ import {
 import { DestinationInfo } from '../types';
 
 interface RegionExplorerProps {
-  onSelectDestination: (destName: string) => void;
+  onSelectDestination: (dest: DestinationInfo | string, openTab?: 'itinerary' | 'payment') => void;
   onSelectRegion: (regionOrState: string) => void;
 }
 
@@ -174,8 +175,8 @@ export const RegionExplorer: React.FC<RegionExplorerProps> = ({
   }, [filteredDestinations]);
 
   // Helper to handle clicking destination
-  const handleDestinationClick = (destName: string, stateName: string) => {
-    onSelectDestination(destName);
+  const handleDestinationClick = (dest: DestinationInfo, openTab: 'itinerary' | 'payment' = 'itinerary') => {
+    onSelectDestination(dest, openTab);
   };
 
   // Helper to view all packages for a specific state
@@ -397,7 +398,8 @@ export const RegionExplorer: React.FC<RegionExplorerProps> = ({
                       <DestinationCard
                         key={dest.id}
                         dest={dest}
-                        onSelect={() => handleDestinationClick(dest.name, dest.state)}
+                        onSelect={() => handleDestinationClick(dest, 'itinerary')}
+                        onPayQR={() => handleDestinationClick(dest, 'payment')}
                       />
                     ))}
                   </div>
@@ -476,7 +478,8 @@ export const RegionExplorer: React.FC<RegionExplorerProps> = ({
                       <DestinationCard
                         key={dest.id}
                         dest={dest}
-                        onSelect={() => handleDestinationClick(dest.name, dest.state)}
+                        onSelect={() => handleDestinationClick(dest, 'itinerary')}
+                        onPayQR={() => handleDestinationClick(dest, 'payment')}
                       />
                     ))}
                   </div>
@@ -520,9 +523,10 @@ export const RegionExplorer: React.FC<RegionExplorerProps> = ({
 interface DestinationCardProps {
   dest: DestinationInfo;
   onSelect: () => void;
+  onPayQR?: () => void;
 }
 
-const DestinationCard: React.FC<DestinationCardProps> = ({ dest, onSelect }) => {
+const DestinationCard: React.FC<DestinationCardProps> = ({ dest, onSelect, onPayQR }) => {
   return (
     <div
       onClick={onSelect}
@@ -544,10 +548,16 @@ const DestinationCard: React.FC<DestinationCardProps> = ({ dest, onSelect }) => 
           {dest.tag}
         </span>
 
-        {/* State Badge Top-Right */}
-        <span className="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-slate-800 text-[10px] font-black uppercase tracking-wider shadow-sm">
-          {dest.state}
-        </span>
+        {/* UPI QR Pay Badge Top-Right */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          <span className="px-2 py-0.5 rounded-md bg-purple-900/90 backdrop-blur-sm text-purple-200 text-[9px] font-black uppercase tracking-wider flex items-center gap-1 border border-purple-400/40 shadow-sm">
+            <QrCode className="w-2.5 h-2.5 text-amber-300" />
+            UPI QR Pay
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-slate-800 text-[10px] font-black uppercase tracking-wider shadow-sm">
+            {dest.state}
+          </span>
+        </div>
 
         {/* Title, State & Avg Temp */}
         <div className="absolute bottom-3 left-3.5 right-3.5 flex items-end justify-between text-white">
@@ -588,19 +598,41 @@ const DestinationCard: React.FC<DestinationCardProps> = ({ dest, onSelect }) => 
           )}
         </div>
 
-        {/* Footer with Price & Explore Action */}
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+        {/* Footer with Price & Action Buttons */}
+        <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
           <div>
             <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 block">Starting from</span>
-            <span className="text-sm sm:text-base font-bold text-slate-900">
-              ₹{dest.startingPrice.toLocaleString('en-IN')}
-              <span className="text-[9px] font-normal text-slate-500"> /person</span>
-            </span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-sm sm:text-base font-black text-slate-900">
+                ₹{dest.startingPrice.toLocaleString('en-IN')}
+              </span>
+              <span className="text-[9px] font-normal text-slate-500">/person</span>
+            </div>
           </div>
 
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#1698B4] group-hover:text-[#FF7A00] group-hover:translate-x-0.5 transition-all">
-            Packages <ArrowRight className="w-3 h-3" />
-          </span>
+          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+            {onPayQR && (
+              <button
+                type="button"
+                onClick={onPayQR}
+                className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#5f259f] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#5f259f] text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm active:scale-95 transition-all cursor-pointer"
+                title="Pay directly via PhonePe UPI QR"
+              >
+                <QrCode className="w-3 h-3 text-amber-300" />
+                <span>QR Pay</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onSelect}
+              className="px-3 py-1.5 rounded-lg bg-[#1698B4] hover:bg-[#0E7A91] text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm active:scale-95 transition-all cursor-pointer"
+              title="Open Destination Page & Full Itinerary"
+            >
+              <span>View Page</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

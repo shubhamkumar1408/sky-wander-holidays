@@ -11,14 +11,18 @@ import {
   ArrowRight,
   MessageCircle,
   Sparkles,
-  Share2
+  Share2,
+  Download,
+  QrCode
 } from 'lucide-react';
 import { TourPackage } from '../types';
 
 interface PackageCardProps {
   pkg: TourPackage;
   onSelect: (pkg: TourPackage) => void;
+  onPayQR?: (pkg: TourPackage) => void;
   onQuickInquiry: (pkg: TourPackage) => void;
+  onDownloadBrochure?: (pkg: TourPackage) => void;
   isSaved?: boolean;
   onToggleSave?: (pkgId: string) => void;
 }
@@ -26,7 +30,9 @@ interface PackageCardProps {
 export const PackageCard: React.FC<PackageCardProps> = ({
   pkg,
   onSelect,
+  onPayQR,
   onQuickInquiry,
+  onDownloadBrochure,
   isSaved = false,
   onToggleSave
 }) => {
@@ -191,7 +197,34 @@ export const PackageCard: React.FC<PackageCardProps> = ({
             <span className="text-[10px] text-slate-500 font-medium">Per Person • All Taxes</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {onPayQR && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPayQR(pkg);
+                }}
+                className="px-2.5 py-2.5 rounded-xl bg-gradient-to-r from-[#5f259f] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#5f259f] text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                title="Pay Advance Token via PhonePe UPI QR"
+              >
+                <QrCode className="w-3.5 h-3.5 text-amber-300" />
+                <span>QR Pay</span>
+              </button>
+            )}
+            {onDownloadBrochure && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownloadBrochure(pkg);
+                }}
+                className="p-2.5 rounded-xl bg-orange-50 text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white border border-orange-200 transition-colors cursor-pointer"
+                title="Download Itinerary PDF"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            )}
             <button
               onClick={handleWhatsApp}
               className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border border-emerald-200 transition-colors"
@@ -201,7 +234,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
             </button>
             <button
               onClick={() => onSelect(pkg)}
-              className="px-4 py-2.5 rounded-xl bg-[#1698B4] hover:bg-[#0D7E99] text-white font-bold text-[11px] uppercase tracking-wider shadow-md shadow-[#1698B4]/25 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+              className="px-3.5 py-2.5 rounded-xl bg-[#1698B4] hover:bg-[#0D7E99] text-white font-bold text-[11px] uppercase tracking-wider shadow-md shadow-[#1698B4]/25 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
             >
               <span>View Tour</span>
               <ArrowRight className="w-3.5 h-3.5" />

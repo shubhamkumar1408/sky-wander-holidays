@@ -74,24 +74,24 @@ export const CustomerReviews: React.FC = () => {
                 </p>
               </div>
 
-              {/* Author */}
+              {/* Author (Bina photo ke - displaying who reviewed) */}
               <div className="mt-6 pt-4 border-t border-white/10 flex items-center gap-3">
-                <img
-                  src={rev.image}
-                  alt={rev.name}
-                  className="w-10 h-10 rounded-full object-cover border border-[#1698B4]/50"
-                />
-                <div>
-                  <h4 className="text-xs font-bold text-white flex items-center gap-1">
-                    {rev.name}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1698B4] to-[#0B2530] border border-[#1698B4]/40 flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0">
+                  {rev.name.replace(/^(Col\.|Dr\.|Mr\.|Mrs\.|Ms\.)\s+/i, '').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('') || 'SW'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5 truncate">
+                    <span className="truncate">{rev.name}</span>
                     {rev.verified && (
-                      <CheckCircle className="w-3 h-3 text-[#38BDF8]" title="Verified Traveler" />
+                      <CheckCircle className="w-3.5 h-3.5 text-[#38BDF8] shrink-0" title="Verified Traveler" />
                     )}
                   </h4>
-                  <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                    <MapPin className="w-2.5 h-2.5 text-[#FF7A00]" />
-                    {rev.city}
-                  </span>
+                  <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
+                    <MapPin className="w-2.5 h-2.5 text-[#FF7A00] shrink-0" />
+                    <span className="truncate">{rev.city}</span>
+                    <span className="text-slate-600">•</span>
+                    <span className="text-emerald-400 text-[10px] font-semibold">Verified Traveler</span>
+                  </div>
                 </div>
               </div>
             </div>

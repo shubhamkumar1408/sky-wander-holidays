@@ -16,7 +16,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
-import riteshImg from '../assets/images/ritesh_photo_1787663856294.jpg';
+import riteshImg from '../assets/images/ritesh_photo.jpg.png';
 import komalImg from '../assets/images/komal_photo_1787665397506.jpg';
 import karanImg from '../assets/images/karan_photo_1787665646878.jpg';
 
@@ -29,6 +29,8 @@ export const AboutUsSection: React.FC = () => {
       badgeColor: 'bg-[#FF7A00]',
       experience: '12+ Years Experience',
       image: riteshImg,
+      fallbackImage: '/images/ritesh_photo.jpg.png',
+      imagePosition: 'object-[50%_20%]',
       bio: 'Visionary founder behind Sky Wander Holidays. Dedicated to delivering transparent, luxurious, and hassle-free domestic and international holiday experiences with verified hotel partners and safety protocols.',
       specialty: 'Tour Circuit Strategy & Luxury Stays',
       phone: '8676928509',
@@ -204,12 +206,17 @@ export const AboutUsSection: React.FC = () => {
                 className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:border-[#1698B4]/50"
               >
                 {/* Header Profile Photo with Role Tag */}
-                <div className="relative h-64 bg-slate-900 overflow-hidden">
+                <div className="relative h-72 sm:h-80 bg-slate-900 overflow-hidden">
                   <img
                     src={member.image}
                     alt={member.name}
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      if (member.fallbackImage && e.currentTarget.src !== member.fallbackImage) {
+                        e.currentTarget.src = member.fallbackImage;
+                      }
+                    }}
+                    className={`w-full h-full object-cover ${member.imagePosition || 'object-top'} group-hover:scale-105 transition-transform duration-500`}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
                   

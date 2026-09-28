@@ -113,6 +113,7 @@ export interface TravelerReview {
   rating: number;
   date: string;
   comment: string;
-  image: string;
+  image?: string;
   verified: boolean;
 }
+

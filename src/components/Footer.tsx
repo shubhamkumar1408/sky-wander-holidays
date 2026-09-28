@@ -18,9 +18,10 @@ import { BrandLogo } from './BrandLogo';
 interface FooterProps {
   onSelectRegion: (region: string) => void;
   onSelectTheme: (theme: string) => void;
+  onOpenBlogPage?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onSelectRegion, onSelectTheme }) => {
+export const Footer: React.FC<FooterProps> = ({ onSelectRegion, onSelectTheme, onOpenBlogPage }) => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -139,6 +140,18 @@ export const Footer: React.FC<FooterProps> = ({ onSelectRegion, onSelectTheme })
                 <button onClick={scrollToAbout} className="text-[#38BDF8] font-bold hover:underline transition-colors text-left cursor-pointer flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-[#FF7A00]" />
                   <span>About Us & Leadership</span>
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => {
+                    if (onOpenBlogPage) {
+                      onOpenBlogPage();
+                    }
+                  }} 
+                  className="text-amber-400 font-bold hover:underline transition-colors text-left cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>📰 Blog</span>
                 </button>
               </li>
               <li>

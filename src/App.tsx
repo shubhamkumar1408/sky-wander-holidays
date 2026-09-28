@@ -18,11 +18,13 @@ import {
   Palmtree,
   Mountain,
   Sun,
-  Flame
+  Flame,
+  ArrowRight
 } from 'lucide-react';
 import { DOMESTIC_PACKAGES } from './data/packages';
 import { DOMESTIC_REGIONS, HOLIDAY_THEMES } from './data/destinations';
-import { TourPackage } from './types';
+import { TourPackage, DestinationInfo } from './types';
+import { resolveDestinationToPackage } from './utils/destinationPackageResolver';
 import { Navbar } from './components/Navbar';
 import { HeroBanner } from './components/HeroBanner';
 import { LiveBookingTicker } from './components/LiveBookingTicker';
@@ -30,11 +32,18 @@ import { RegionExplorer } from './components/RegionExplorer';
 import { TourCategoriesAutoSlider, TourCategoryItem } from './components/TourCategoriesAutoSlider';
 import { PackageCard } from './components/PackageCard';
 import { PackageModal } from './components/PackageModal';
+import { BrochureDownloadModal } from './components/BrochureDownloadModal';
+import { getBrochureForPackage } from './data/destinationBrochures';
 import { CustomAITripPlanner } from './components/CustomAITripPlanner';
 import { QuickInquiryModal } from './components/QuickInquiryModal';
+import { LoginModal } from './components/LoginModal';
+import { MyBookingsModal } from './components/MyBookingsModal';
+import { GoogleWorkspacePanel } from './components/GoogleWorkspacePanel';
+import { getCurrentUser, logoutUser, UserProfile, onAuthChange } from './utils/userAuth';
 import { DomesticPerks } from './components/DomesticPerks';
 import { CustomerReviews } from './components/CustomerReviews';
 import { AboutUsSection } from './components/AboutUsSection';
+import { BlogPage } from './components/BlogPage';
 import { WhatsAppChatButton } from './components/WhatsAppChatButton';
 import { Footer } from './components/Footer';
 
@@ -42,11 +51,76 @@ export const App: React.FC = () => {
   const [packages, setPackages] = useState<TourPackage[]>(DOMESTIC_PACKAGES);
   const [loading, setLoading] = useState(false);
 
-  // Modals
+  // View Routing: 'home' vs 'blogs' with URL Hash synchronization (#blog)
+  const [currentView, setCurrentView] = useState<'home' | 'blogs'>(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.hash.toLowerCase().includes('blog') ? 'blogs' : 'home';
+    }
+    return 'home';
+  });
+
+  // URL Hash routing listener (enables real browser URL navigation and Back/Forward buttons)
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash.toLowerCase().includes('blog')) {
+        setCurrentView('blogs');
+        window.scrollTo(0, 0);
+      } else {
+        setCurrentView('home');
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  const handleOpenBlogPage = () => {
+    if (window.location.hash !== '#blog') {
+      window.location.hash = 'blog';
+    }
+    setCurrentView('blogs');
+    window.scrollTo(0, 0);
+  };
+
+  const handleBackToHome = () => {
+    if (window.location.hash === '#blog') {
+      window.location.hash = '';
+    }
+    setCurrentView('home');
+    window.scrollTo(0, 0);
+  };
+
+  // User Auth & My Bookings state
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => getCurrentUser());
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [showMyBookings, setShowMyBookings] = useState<boolean>(false);
+  const [myBookingsPhone, setMyBookingsPhone] = useState<string>('');
+
+  // Modals & Navigation
   const [selectedPackage, setSelectedPackage] = useState<TourPackage | null>(null);
+  const [modalInitialTab, setModalInitialTab] = useState<'itinerary' | 'inclusions' | 'hotels' | 'reviews' | 'payment'>('itinerary');
   const [showCustomPlanner, setShowCustomPlanner] = useState(false);
   const [showQuickInquiry, setShowQuickInquiry] = useState(false);
   const [inquiryPackage, setInquiryPackage] = useState<TourPackage | null>(null);
+  const [downloadBrochurePkg, setDownloadBrochurePkg] = useState<TourPackage | null>(null);
+  const [showWorkspacePanel, setShowWorkspacePanel] = useState<boolean>(false);
+
+  // Automatic login popup on website open ("website open karte hi login popup aaye")
+  useEffect(() => {
+    // If user is not logged in, trigger login popup shortly after website loads
+    if (!currentUser) {
+      const timer = setTimeout(() => {
+        setShowLoginModal(true);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Listen to auth changes
+  useEffect(() => {
+    return onAuthChange((user) => {
+      setCurrentUser(user);
+    });
+  }, []);
 
   // Filters & State
   const [selectedRegion, setSelectedRegion] = useState<string>('All Regions');
@@ -162,6 +236,14 @@ export const App: React.FC = () => {
   };
 
   const handleSelectQuickTag = (tag: string) => {
+    try {
+      const resolvedPkg = resolveDestinationToPackage(tag);
+      if (resolvedPkg) {
+        setModalInitialTab('itinerary');
+        setSelectedPackage(resolvedPkg);
+        return;
+      }
+    } catch {}
     setSearchQuery(tag);
     setSelectedRegion('All Regions');
     setSelectedTheme('All Themes');
@@ -169,14 +251,19 @@ export const App: React.FC = () => {
     if (elem) elem.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSelectDestination = (destName: string) => {
-    setSearchQuery(destName);
-    const elem = document.getElementById('packages-section');
-    if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+  const handleSelectDestination = (destInput: string | DestinationInfo, tab: 'itinerary' | 'payment' = 'itinerary') => {
+    const resolvedPkg = resolveDestinationToPackage(destInput);
+    setModalInitialTab(tab);
+    setSelectedPackage(resolvedPkg);
   };
 
   const handleCategorySelect = (item: TourCategoryItem) => {
-    if (item.filterType === 'theme') {
+    if (item.filterType === 'destination') {
+      const resolvedPkg = resolveDestinationToPackage(item.filterValue);
+      setModalInitialTab('itinerary');
+      setSelectedPackage(resolvedPkg);
+      return;
+    } else if (item.filterType === 'theme') {
       setSelectedTheme(item.filterValue);
       setSelectedRegion('All Regions');
       setSearchQuery('');
@@ -184,10 +271,6 @@ export const App: React.FC = () => {
       setSelectedRegion(item.filterValue);
       setSelectedTheme('All Themes');
       setSearchQuery('');
-    } else if (item.filterType === 'destination') {
-      setSearchQuery(item.filterValue);
-      setSelectedRegion('All Regions');
-      setSelectedTheme('All Themes');
     }
     const elem = document.getElementById('packages-section');
     if (elem) elem.scrollIntoView({ behavior: 'smooth' });
@@ -220,29 +303,61 @@ export const App: React.FC = () => {
       <Navbar
         onOpenCustomPlanner={() => setShowCustomPlanner(true)}
         onOpenInquiry={handleOpenInquiry}
+        onOpenMyBookings={(ph) => {
+          setMyBookingsPhone(ph || (currentUser ? currentUser.phone : ''));
+          setShowMyBookings(true);
+        }}
+        onOpenLogin={() => setShowLoginModal(true)}
+        onOpenWorkspaceSync={() => setShowWorkspacePanel(true)}
+        onOpenBlogPage={handleOpenBlogPage}
+        onBackToHome={handleBackToHome}
+        currentView={currentView}
+        currentUser={currentUser}
+        onLogout={() => {
+          logoutUser();
+          setCurrentUser(null);
+        }}
         selectedRegion={selectedRegion}
         onSelectRegion={(reg) => {
           setSelectedRegion(reg);
-          const elem = document.getElementById('packages-section');
-          if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+          if (currentView === 'blogs') {
+            setCurrentView('home');
+            setTimeout(() => {
+              const elem = document.getElementById('packages-section');
+              if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+            }, 60);
+          } else {
+            const elem = document.getElementById('packages-section');
+            if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+          }
         }}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         savedCount={savedIds.length}
       />
 
-      {/* Hero Banner with Slideshow & Smart Search Filter */}
-      <HeroBanner
-        onSearch={handleHeroSearch}
-        onOpenCustomPlanner={() => setShowCustomPlanner(true)}
-        onSelectQuickTag={handleSelectQuickTag}
-      />
+      {/* Conditional View: Dedicated Blog Page vs Main Home Portal */}
+      {currentView === 'blogs' ? (
+        <main className="flex-1">
+          <BlogPage
+            onBackToHome={handleBackToHome}
+            onSelectDestination={(destName) => handleSelectDestination(destName, 'itinerary')}
+          />
+        </main>
+      ) : (
+        <>
+          {/* Hero Banner with Slideshow & Smart Search Filter */}
+          <HeroBanner
+            onSearch={handleHeroSearch}
+            onOpenCustomPlanner={() => setShowCustomPlanner(true)}
+            onSelectQuickTag={handleSelectQuickTag}
+          />
 
-      {/* Live Animated Booking Popups (Chalta Firta) */}
-      <LiveBookingTicker />
+          {/* Live Animated Booking Popups (Chalta Firta) */}
+          <LiveBookingTicker />
 
-      {/* Main Content Area */}
-      <main className="flex-1">
+          {/* Main Content Area */}
+          <main className="flex-1">
 
         {/* 1. Auto Sliding Tour Categories Section (Matching Design) */}
         <TourCategoriesAutoSlider onSelectCategory={handleCategorySelect} />
@@ -440,8 +555,16 @@ export const App: React.FC = () => {
                 <PackageCard
                   key={pkg.id}
                   pkg={pkg}
-                  onSelect={(p) => setSelectedPackage(p)}
+                  onSelect={(p) => {
+                    setModalInitialTab('itinerary');
+                    setSelectedPackage(p);
+                  }}
+                  onPayQR={(p) => {
+                    setModalInitialTab('payment');
+                    setSelectedPackage(p);
+                  }}
                   onQuickInquiry={(p) => handleOpenInquiry(p)}
+                  onDownloadBrochure={(p) => setDownloadBrochurePkg(p)}
                   isSaved={savedIds.includes(pkg.id)}
                   onToggleSave={toggleSave}
                 />
@@ -472,26 +595,45 @@ export const App: React.FC = () => {
         {/* 3. Assurance & Why Choose Us Section */}
         <DomesticPerks />
 
-        {/* 4. Customer Reviews & Social Proof */}
+        {/* 5. Customer Reviews & Social Proof */}
         <CustomerReviews />
 
-        {/* 5. About Us & Leadership Team (Ritesh Kashyap, Karan, Komal) */}
+        {/* 6. About Us & Leadership Team (Ritesh Kashyap, Karan, Komal) */}
         <AboutUsSection />
 
       </main>
+      </>
+      )}
 
       {/* Footer */}
       <Footer
         onSelectRegion={(reg) => {
           setSelectedRegion(reg);
-          const elem = document.getElementById('packages-section');
-          if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+          if (currentView === 'blogs') {
+            setCurrentView('home');
+            setTimeout(() => {
+              const elem = document.getElementById('packages-section');
+              if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+            }, 60);
+          } else {
+            const elem = document.getElementById('packages-section');
+            if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+          }
         }}
         onSelectTheme={(th) => {
           setSelectedTheme(th);
-          const elem = document.getElementById('packages-section');
-          if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+          if (currentView === 'blogs') {
+            setCurrentView('home');
+            setTimeout(() => {
+              const elem = document.getElementById('packages-section');
+              if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+            }, 60);
+          } else {
+            const elem = document.getElementById('packages-section');
+            if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+          }
         }}
+        onOpenBlogPage={handleOpenBlogPage}
       />
 
       {/* Floating WhatsApp Live Chat Widget */}
@@ -502,6 +644,7 @@ export const App: React.FC = () => {
         <PackageModal
           pkg={selectedPackage}
           onClose={() => setSelectedPackage(null)}
+          initialTab={modalInitialTab}
         />
       )}
 
@@ -521,8 +664,56 @@ export const App: React.FC = () => {
             setShowQuickInquiry(false);
             setInquiryPackage(null);
           }}
+          onViewMyBookings={(ph) => {
+            setMyBookingsPhone(ph);
+            setShowMyBookings(true);
+          }}
         />
       )}
+
+      {/* Destination Brochure PDF Download Modal */}
+      {downloadBrochurePkg && (
+        <BrochureDownloadModal
+          brochure={getBrochureForPackage(downloadBrochurePkg.id || downloadBrochurePkg.title)}
+          isOpen={Boolean(downloadBrochurePkg)}
+          onClose={() => setDownloadBrochurePkg(null)}
+        />
+      )}
+
+      {/* Instant Login Popup (Triggered automatically on website open, or via Navbar) */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+          setShowLoginModal(false);
+        }}
+        onOpenMyBookings={(ph) => {
+          setMyBookingsPhone(ph || (currentUser ? currentUser.phone : ''));
+          setShowMyBookings(true);
+        }}
+      />
+
+      {/* My Bookings & Trip Dashboard Modal (Search by number or click demo numbers) */}
+      <MyBookingsModal
+        isOpen={showMyBookings}
+        onClose={() => setShowMyBookings(false)}
+        initialPhone={myBookingsPhone || (currentUser ? currentUser.phone : '')}
+        onOpenInquiry={() => {
+          setShowMyBookings(false);
+          setShowQuickInquiry(true);
+        }}
+        onOpenLogin={() => {
+          setShowMyBookings(false);
+          setShowLoginModal(true);
+        }}
+      />
+
+      {/* Google Sheets & Gmail Workspace Hub */}
+      <GoogleWorkspacePanel
+        isOpen={showWorkspacePanel}
+        onClose={() => setShowWorkspacePanel(false)}
+      />
 
     </div>
   );

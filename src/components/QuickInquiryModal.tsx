@@ -13,16 +13,21 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { TourPackage } from '../types';
+import { getCurrentUser } from '../utils/userAuth';
+import { saveLocalBooking, BookingItem } from '../data/sampleBookings';
+import { dispatchCustomerActivity } from '../utils/googleWorkspace';
 
 interface QuickInquiryModalProps {
   pkg?: TourPackage | null;
   onClose: () => void;
+  onViewMyBookings?: (phone: string) => void;
 }
 
-export const QuickInquiryModal: React.FC<QuickInquiryModalProps> = ({ pkg, onClose }) => {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+export const QuickInquiryModal: React.FC<QuickInquiryModalProps> = ({ pkg, onClose, onViewMyBookings }) => {
+  const loggedInUser = getCurrentUser();
+  const [name, setName] = useState(loggedInUser?.name || '');
+  const [phone, setPhone] = useState(loggedInUser?.phone || '');
+  const [email, setEmail] = useState(loggedInUser?.email || '');
   const [destination, setDestination] = useState(pkg ? pkg.title : 'Kashmir / Kerala / Goa');
   const [travelDate, setTravelDate] = useState(
     new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -62,18 +67,70 @@ export const QuickInquiryModal: React.FC<QuickInquiryModalProps> = ({ pkg, onClo
         body: JSON.stringify(payload)
       });
 
+      let assignedRef = `SWH-IND-${Math.floor(100000 + Math.random() * 900000)}`;
+
       if (res.ok) {
         const data = await res.json();
-        setRefNumber(data.inquiry?.id || `SWH-IND-${Math.floor(100000 + Math.random() * 900000)}`);
-      } else {
-        setRefNumber(`SWH-IND-${Math.floor(100000 + Math.random() * 900000)}`);
+        assignedRef = data.inquiry?.id || data.booking?.id || assignedRef;
       }
+      setRefNumber(assignedRef);
+
+      // Automatically dispatch lead to Google Sheets & Email
+      dispatchCustomerActivity({
+        type: 'INQUIRY',
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        details: {
+          id: assignedRef,
+          packageTitle: destination,
+          travelDate,
+          adultsCount: adults,
+          departureCity,
+          specialRequests: notes,
+          estimatedTotal: (pkg ? pkg.pricePerPerson : 18000) * adults
+        }
+      }).catch(err => console.warn('Activity dispatch error:', err));
+
+      // Save to local bookings store so it shows up in "My Bookings" for this phone number
+      const newLocalBooking: BookingItem = {
+        id: assignedRef,
+        fullName: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        packageId: pkg?.id,
+        packageTitle: destination,
+        destination: pkg ? pkg.destinationsCovered.join(', ') : destination,
+        travelDate,
+        duration: pkg ? `${pkg.durationDays} Days / ${pkg.durationNights} Nights` : '5 Days / 4 Nights',
+        adultsCount: adults,
+        childrenCount: 0,
+        departureCity,
+        hotelCategory: 'Deluxe 4★',
+        includeFlights: false,
+        includeCab: true,
+        cabType: 'Private Dedicated AC Tourist Cab with Chauffeur',
+        specialRequests: notes,
+        estimatedTotal: (pkg ? pkg.pricePerPerson : 18000) * adults,
+        advancePaid: Math.round(((pkg ? pkg.pricePerPerson : 18000) * adults) * 0.35),
+        status: 'Confirmed',
+        tripStatus: 'Confirmed',
+        paymentStatus: 'Advance Received (100% Protected)',
+        assignedManager: 'Mr. Shubham Dutt (Tour Desk Head)',
+        managerPhone: '+91 86769 28509',
+        driverName: 'Verified Tourist Chauffeur',
+        driverPhone: '+91 86769 28509',
+        createdAt: new Date().toISOString()
+      };
+      saveLocalBooking(newLocalBooking);
+
       setIsConfirmed(true);
       try {
         confetti({ particleCount: 70, spread: 60 });
       } catch {}
     } catch {
-      setRefNumber(`SWH-IND-${Math.floor(100000 + Math.random() * 900000)}`);
+      const fallbackRef = `SWH-IND-${Math.floor(100000 + Math.random() * 900000)}`;
+      setRefNumber(fallbackRef);
       setIsConfirmed(true);
     } finally {
       setIsSubmitting(false);
@@ -122,19 +179,34 @@ export const QuickInquiryModal: React.FC<QuickInquiryModalProps> = ({ pkg, onClo
               <div>Helpline: <strong className="text-[#FF7A00]">8676928509</strong></div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
+              {onViewMyBookings && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onViewMyBookings(phone);
+                  }}
+                  className="w-full sm:flex-1 py-3 bg-[#1698B4] hover:bg-[#0E7A91] text-white rounded-xl font-bold text-xs uppercase transition-colors text-center cursor-pointer shadow-sm"
+                >
+                  मेरी बुकिंग देखें (My Bookings)
+                </button>
+              )}
+
               <a
                 href={`https://wa.me/918676928509?text=${encodeURIComponent(`Hi! I just submitted an inquiry for ${destination} on Sky Wander Holidays (Ref ID: ${refNumber}). Please share details.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase transition-colors text-center flex items-center justify-center gap-1.5"
+                className="w-full sm:flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase transition-colors text-center flex items-center justify-center gap-1.5"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
-                <span>Chat on WhatsApp</span>
+                <span>WhatsApp Desk</span>
               </a>
+
               <button
+                type="button"
                 onClick={onClose}
-                className="flex-1 py-3 bg-[#0B2530] hover:bg-[#1698B4] text-white rounded-xl font-bold text-xs uppercase transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-5 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold text-xs uppercase transition-colors cursor-pointer"
               >
                 Done
               </button>
